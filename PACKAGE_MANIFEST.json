@@ -1,0 +1,30 @@
+{
+  "description": "Specification kit with static design reference; not the finished CMS",
+  "sha256": {
+    ".env.example": "6672f6d18698dd18c69e766692d1914092b4fb4f40ebd5db3068869d776767b7",
+    ".gitignore": "f3771c9430c2f373d945c631a428943ae8ef6a5c7f5d4cf6dc4b59d884e93251",
+    "AGENTS.md": "55c843927f08a7f73e69d6586ab113cea7ef2f7ee132f598fdf6498ec1ba6016",
+    "README_TR.md": "089f05f233b3b1e9391cf08a6514b3bd024527ddc88c0c65a0dc79646f58fc0d",
+    "docs/ACCEPTANCE.md": "9cb72ec5054b32ac5c0b490d4d99bde1a9472ff02f11f5aaa445e3fe4b9f7958",
+    "docs/ARCHITECTURE.md": "28c49c8ab4bbf53bc8495fb31088c62f32640cdeca55aa3a00d8cacebfb552d9",
+    "docs/CONTENT_MODEL.md": "4959bb1c3505415a1ee4d15f254ce248c6bc594a6f0cb52f41a8a2dd2d28db65",
+    "docs/DECISIONS.md": "cc45cfb227de3d485b6b40fa52cb793091e9f589e33baa6fb09ae5cee3eb74bc",
+    "docs/DESIGN_AND_MOTION.md": "5e089ae2780fde643e83ece9c10de3bd1d22fc732316940ef544af6bab53c3e4",
+    "docs/IMPLEMENTATION_PLAN.md": "8649f7dedd1e093663d04e5c188b2e17724da4dea1d9657cfd61af6e568449de",
+    "docs/OPERATIONS.md": "9cbd75bd02ca4cb307a56742429d402034d51ecd52c9c1946f840ca07626dc78",
+    "docs/PROGRESS.md": "ea15a795c033c4354b196ee11127d8acc75b07f34f34681d8585b3c0ca54f2dd",
+    "docs/PROJECT_SPEC.md": "846165f6b737ee92a7f28575c5675a754170ee0d2a3ff3b65e0c663385780f3a",
+    "docs/SECURITY.md": "9883759e82e156cd826ffdb8a016fa05f3bf791472bbc64f43dc79887789a978",
+    "docs/SOURCES.md": "24f0f7c517f0fca3e7f60e3735862424e98366e08adc44cbaa5504e98dccf2e3",
+    "docs/VERIFICATION.md": "a35a3a950e6c6f623cdc6eba970adcd3b27cf5a9903665a10bd7d1edd102470d",
+    "opencode.json": "dd123fd78f7400ec85dbe80c6dbc06e2bbf915cd27566acc6198ade5da887904",
+    "prompts/CONTINUE_TR.md": "249c1163abeed98b359c9076072f1cef0b16198e6c38e8bc75626fc972ad90e3",
+    "prompts/REVIEW_TR.md": "13f7b66adb3e839081b223851c50e425605eb1712186e79b43cb123a1544f4d3",
+    "prompts/START_TR.md": "0ce64b18d7066154dba78d9d405c622d87e4c823313a331833146343d9713904",
+    "reference-site/blog/index.html": "9b131768807e6ea3e5179914d253728566f3c9f4fff20ec5199c7581cae7e9a3",
+    "reference-site/index.html": "a613ec63405686fd2237acfeb5fd7980a3a48afbdf26415b5bfe4bb39ceccd69",
+    "reference-site/motion.js": "68b8b0653a974dce2cb5aca7125057966577decb3c3fe8fe64cdecbf740305d1",
+    "reference-site/projects/index.html": "46d5a768108dbcedb0f61c6cef1be9367cd7608deb2bf78c54a9cc7e6145412a",
+    "reference-site/styles.css": "696b8b222edfe8e641737226571386b53cc3dcd39e6d5419c2ef3ab6b3730c94"
+  }
+}

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Payload
+*/payload-types.ts.bak
+
+# Build artifacts
+dist/
+build/
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+artifacts/
+
+# Backups (never commit dumps or media copies)
+backups/
+*.dump
+*.sql.gz
+
+# Docker/database volumes if bind-mounted locally
+.data/
+.volumes/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS/editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# TypeScript
+*.tsbuildinfo

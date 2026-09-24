@@ -1,0 +1,37 @@
+# Decision log
+
+## Fixed product decisions
+- Existing cobalt editorial design and animations retained.
+- Next.js + Payload + PostgreSQL, single application/repository.
+- S3-compatible media; no cloud vendor required for local work.
+- Single owner, no public registration; English public copy, Turkish user handoff.
+- No-scroll homepage at ordinary target viewports, natural scrolling for content/accessibility.
+- Independent Docker/Node deployment; no ChatGPT Sites manifest carried over.
+- Empty production post/project data; opt-in local samples only.
+
+## Agent must fill compatibility matrix
+| Component | Exact version | Official compatibility evidence | Date verified |
+|---|---|---|---|
+| Node.js | v24.19.0 (host) | Satisfies `next@16.3.6` engines `>=20.9.0`, `payload@3.90.2` engines `^18.20.2 \|\| >=20.9.0`, `sharp@0.35.4` engines `>=20.9.0`, `vitest@5.0.1` engines `^22.12.0 \|\| ^24.0.0 \|\| >=26.0.0`. Checked via `npm view <pkg> engines`. | 2026-09-24 |
+| pnpm | 9.12.0 | Already installed/verified locally (`pnpm --version`). Deliberately not bumped to latest 12.6.0: pnpm 10+ changed the default handling of dependency lifecycle/build scripts (native postinstalls, e.g. for `sharp`/libvips, are blocked unless explicitly approved). Staying on the already-verified 9.x line avoids an unresearched breaking change; revisit if a future session wants the newer default. | 2026-09-24 |
+| Next.js | 16.3.6 | `npm view next@16.3.6 engines/peerDependencies`. | 2026-09-24 |
+| React / React DOM | 19.3.0 | Satisfies `next@16.3.6` peer `^19.0.0` and `@payloadcms/richtext-lexical@3.90.2` peer `^19.0.1 \|\| ^19.1.2 \|\| ^19.2.1` (caret range covers 19.3.0). | 2026-09-24 |
+| Payload + official adapters | 3.90.2 (payload, @payloadcms/next, @payloadcms/db-postgres, @payloadcms/richtext-lexical, @payloadcms/storage-s3, @payloadcms/email-nodemailer, @payloadcms/ui, @payloadcms/graphql) | All pinned to the identical published version; `@payloadcms/next@3.90.2` peer accepts `next` range `>=16.3.3 <17.0.0` which includes 16.3.6. `@faceless-ui/modal@3.0.0` / `@faceless-ui/scroll-info@2.0.0` peers required by richtext-lexical are already direct dependencies of `@payloadcms/ui@3.90.2`, so pnpm resolves them without manual pins. | 2026-09-24 |
+| graphql | 16.14.2 | `payload@3.90.2` peer requires `^16.8.1`; 17.0.2 (npm "latest") is out of range and was rejected. | 2026-09-24 |
+| TypeScript | 6.0.3 | npm `latest` dist-tag for `typescript` is 7.0.2 (the Go-ported native compiler), but `@typescript-eslint/parser@8.70.1` and `@typescript-eslint/eslint-plugin@8.70.1` (current stable, matching `eslint@10.11.0` and `eslint-config-next@16.3.6`) both declare peer `typescript: ">=4.8.4 <6.1.0"`. TS 7.0.2 is therefore not mutually compatible with the current lint toolchain; 6.0.3 is the newest release inside the supported range. | 2026-09-24 |
+| ESLint toolchain | eslint 10.11.0, eslint-config-next 16.3.6, @typescript-eslint/parser+eslint-plugin 8.70.1 | Peer ranges cross-checked as above. | 2026-09-24 |
+| sharp | 0.35.4 | Payload does not bundle an image-processing library; official upload docs require installing `sharp` separately for resizing/thumbnails. Engines `>=20.9.0` satisfied by Node 24.19.0. | 2026-09-24 |
+| vitest / vite | vitest 5.0.1, vite 8.3.1 | `vitest@5.0.1` peer `vite: ^6.4.0 \|\| ^7.0.0 \|\| ^8.0.0` — 8.3.1 satisfies it. | 2026-09-24 |
+| @playwright/test | 1.63.0 | `next@16.3.6` optional peer `@playwright/test: ^1.51.1` — 1.63.0 satisfies (same major). | 2026-09-24 |
+| @types/node | 24.13.6 | Matches installed Node 24 major; satisfies vitest peer `@types/node: ^22.0.0 \|\| >=24.0.0`. | 2026-09-24 |
+| PostgreSQL (Docker) | `postgres:17-alpine`, server reports `PostgreSQL 17.11` | Pulled and ran locally; `docker run --rm postgres:17-alpine postgres --version`. Official Postgres image, no auth required. | 2026-09-24 |
+| S3-compatible storage (Docker) | `dxflrs/garage:v2.4.1` (Garage, Deuxfleurs) | **Deviation from MinIO**: `minio/minio` is no longer pullable from Docker Hub or Quay without auth (`pull access denied` on `latest` and on an older pinned `RELEASE.*` tag alike — verified 2026-09-24), so it cannot serve as the documented "official MinIO distribution". Garage is ARCHITECTURE.md's explicit fallback ("or another maintained compatible service"). Verified end-to-end: booted single-node via `server --single-node --default-access-key --default-bucket` flags (self-provisions a default access key + private bucket, no manual cluster/bucket bootstrap step needed), then ran a real `boto3` S3 client roundtrip (list/put/head/get/delete) against `http://127.0.0.1:3900` — all succeeded. | 2026-09-24 |
+| Mail capture (Docker) | `axllent/mailpit:v1.31.2` | Pulled and ran; binary reports `mailpit v1.31.2`; exact tag confirmed present on Docker Hub (not floating `latest`). | 2026-09-24 |
+
+Record material deviations with reason, alternatives considered and acceptance impact. Do not silently change required stack or drop scope because a test is difficult.
+
+### Deviation: MinIO → Garage for local/dev S3-compatible storage
+- **Reason**: MinIO's container images are no longer publicly pullable (verified denied on Docker Hub `minio/minio:latest`, Quay `minio/minio:latest`, and an older pinned MinIO `RELEASE.*` tag — all return access-denied without a Docker Hub login as of 2026-09-24).
+- **Alternatives considered**: SeaweedFS (pulls fine, but needs master+volume+filer topology even for a single node — more moving parts for local dev than justified here); LocalStack (broader AWS emulation than needed, heavier).
+- **Choice**: Garage (`dxflrs/garage`), a maintained open-source S3-compatible object store built for exactly this self-hosted single/small-node use case. Explicitly allowed by ARCHITECTURE.md ("Local endpoint can be an official MinIO distribution or another maintained compatible service; verify its current availability and pin the image").
+- **Acceptance impact**: None expected — Payload's `@payloadcms/storage-s3` talks to any S3-compatible endpoint via the AWS SDK v3; the verified roundtrip (put/get/head/delete against a private bucket with path-style addressing, `signatureVersion: v4`) covers the operations Payload uses for uploads. Production deployments remain free to point at MinIO, AWS S3, or any other S3-compatible provider the operator controls — this deviation only affects the local/dev/test compose stack pinned in this repo.
