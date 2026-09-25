@@ -49,3 +49,58 @@ Verified in `node_modules/payload/dist/auth/operations/registerFirstUser.js`: wh
 
 ### Caching strategy: start uncached, add cache tags only if measurement shows a need
 ARCHITECTURE.md explicitly allows: "Prefer a simple uncached server read if cache correctness cannot initially be proven, then measure and optimize." Public pages read through Payload's Local API directly (not Next's `fetch()`), so Next's `fetch`-based data cache does not apply to them automatically, and Next.js 16 ships an explicit-opt-in Cache Components model (`"use cache"` + `cacheTag`/`cacheLife`) that is easy to misapply incorrectly under time pressure. Decision: every data-driven route (`/`, `/blog`, `/blog/[slug]`, `/projects`, `/projects/[slug]`, `/sitemap.xml`, `/rss.xml`) sets `export const dynamic = 'force-dynamic'` and reads Payload fresh on every request — no cache layer, no invalidation hooks needed. This trivially satisfies the "<5s update visibility" requirement (it is immediate) at the cost of an extra DB round-trip per request, which is acceptable for a personal-blog traffic profile. Revisit with `cacheTag`/`cacheLife` only if real measurement shows it is needed.
+
+### Media rendering: Payload size variants, not next/image
+Payload builds media URLs from `serverURL`, so they are absolute
+(`http://localhost:3000/api/media/file/x.png`). `next/image` rejects absolute
+URLs whose hostname is not in `images.remotePatterns`, which made every
+listing containing a post with a cover render as an error boundary — found
+only after seeding demo content. Whitelisting hostnames would mean
+per-environment image config. Instead `src/components/MediaImage.tsx`
+normalises the URL to a same-origin path and builds `srcSet` from the
+variants Payload already generated (`Media.upload.imageSizes`). This also
+stops the Next optimizer from re-encoding already-resized images, and avoids
+its server-side fetch running without the viewer's cookies — which would
+break owner previews of assets that are not public yet.
+
+### Payload's Local API drops the `draft` flag on `restoreVersion`
+`payload.restoreVersion({ id, draft: true })` silently republishes: the local
+wrapper (`collections/operations/local/restoreVersion.js`) destructures a
+fixed option set and never forwards `draft` to the operation, so the
+operation runs with its default `draft: false` and overwrites the live
+published row. Verified empirically — the live row changed and stayed
+`published`.
+
+The REST endpoint *does* forward `?draft=true`, so the admin UI's
+"restore as draft" behaves correctly, which is the path the owner actually
+uses. Consequences for this codebase:
+- The A28 acceptance test lives in `tests/e2e/versions.spec.ts` and drives the
+  REST endpoint, not the Local API.
+- Do not call `payload.restoreVersion({ draft: true })` in application code
+  expecting it to leave the published revision alone. Read the version and
+  `payload.update({ ..., draft: true })` instead.
+
+### Build must not need secrets or a database
+`next build` forces `NODE_ENV=production`, which would otherwise trip the
+production guards in `src/lib/env.ts` (https-only, no localhost) during an
+ordinary local build. Those guards, and the "variable is required" errors,
+are now skipped when `process.env.NEXT_PHASE === 'phase-production-build'`,
+falling back to obviously-fake placeholders. Runtime validation is unchanged
+and still strict. This is what lets the Docker image build with no
+environment and no reachable database at all.
+
+Relatedly, the public route group is `force-dynamic`. Without it Next
+prerendered `/` and `/sitemap.xml`, which baked CMS content into the build
+output and made the build require a live database — both explicitly ruled out
+by docs/OPERATIONS.md.
+
+### Container image ships a full dependency tree (~1.4 GB)
+Next's `standalone` output was tried and removed. The same image has to run
+the controlled migration step, which loads the TypeScript Payload config
+through the Payload CLI, so a trimmed server bundle would need a second image
+and a second dependency tree to reason about. One image with production
+dependencies keeps `pnpm db:migrate` identical in development and production.
+The size is acceptable for the documented target (a single Docker host); if it
+ever matters, the fix is a separate slim runtime image plus a dedicated
+migration image, not partial standalone output.
+
