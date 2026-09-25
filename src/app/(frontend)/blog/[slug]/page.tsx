@@ -1,8 +1,8 @@
 import { draftMode } from 'next/headers'
-import Image from 'next/image'
 import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
 
+import { MediaImage } from '@/components/MediaImage'
 import { PostCard } from '@/components/cards/PostCard'
 import { PreviewBanner } from '@/components/PreviewBanner'
 import { RichText } from '@/components/richtext/RichText'
@@ -98,9 +98,9 @@ export default async function PostPage({ params }: { params: Promise<Params> }) 
         )}
       </header>
 
-      {cover?.url && (
+      {cover && (
         <div className="detail-cover">
-          <Image src={cover.url} alt={cover.alt} fill sizes="100vw" priority />
+          <MediaImage media={cover} sizes="100vw" priority />
         </div>
       )}
 

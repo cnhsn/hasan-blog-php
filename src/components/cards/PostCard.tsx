@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
+import { MediaImage } from '@/components/MediaImage'
 import { formatDate } from '@/lib/date'
 import { lexicalToPlainText } from '@/lib/lexical'
 import { calculateReadingTimeMinutes } from '@/lib/readingTime'
@@ -16,12 +16,10 @@ export function PostCard({ post }: { post: Post }) {
 
   return (
     <Link href={`/blog/${post.slug}`} className="card">
-      {cover?.url && (
+      {cover && (
         <div className="card-cover">
-          <Image
-            src={cover.url}
-            alt={cover.alt}
-            fill
+          <MediaImage
+            media={cover}
             sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw"
           />
         </div>

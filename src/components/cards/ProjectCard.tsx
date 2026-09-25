@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
+import { MediaImage } from '@/components/MediaImage'
 import type { Project } from '@/payload-types'
 
 const LIFECYCLE_LABELS: Record<Project['lifecycleStatus'], string> = {
@@ -16,12 +16,10 @@ export function ProjectCard({ project }: { project: Project }) {
 
   return (
     <Link href={`/projects/${project.slug}`} className="card">
-      {cover?.url && (
+      {cover && (
         <div className="card-cover">
-          <Image
-            src={cover.url}
-            alt={cover.alt}
-            fill
+          <MediaImage
+            media={cover}
             sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw"
           />
         </div>

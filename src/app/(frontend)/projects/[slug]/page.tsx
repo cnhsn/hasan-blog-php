@@ -1,8 +1,8 @@
 import { draftMode } from 'next/headers'
-import Image from 'next/image'
 import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
 
+import { MediaImage } from '@/components/MediaImage'
 import { PreviewBanner } from '@/components/PreviewBanner'
 import { RichText } from '@/components/richtext/RichText'
 import { getOwnerUser } from '@/lib/auth'
@@ -121,9 +121,9 @@ export default async function ProjectPage({ params }: { params: Promise<Params> 
         )}
       </header>
 
-      {cover?.url && (
+      {cover && (
         <div className="detail-cover">
-          <Image src={cover.url} alt={cover.alt} fill sizes="100vw" priority />
+          <MediaImage media={cover} sizes="100vw" priority />
         </div>
       )}
 
@@ -155,7 +155,7 @@ export default async function ProjectPage({ params }: { params: Promise<Params> 
             {gallery.map((item, index) => (
               <figure key={item.id ?? index}>
                 <div className="gallery-item">
-                  <Image src={item.media.url ?? ''} alt={item.media.alt} fill sizes="50vw" />
+                  <MediaImage media={item.media} sizes="(max-width: 700px) 100vw, 50vw" />
                 </div>
                 {item.caption && <figcaption className="gallery-caption">{item.caption}</figcaption>}
               </figure>

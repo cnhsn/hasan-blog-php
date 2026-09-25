@@ -14,8 +14,33 @@ export const RESERVED_SLUGS = new Set([
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
+/**
+ * Latin letters that Unicode normalization does not decompose into an
+ * ASCII base letter plus a combining mark, so NFKD alone would drop
+ * them. Turkish dotless "ı" is the one that matters most here — without
+ * this, "Başlık" slugified to "basl-k".
+ */
+const TRANSLITERATIONS: Record<string, string> = {
+  ı: 'i',
+  İ: 'i',
+  ß: 'ss',
+  æ: 'ae',
+  Æ: 'ae',
+  œ: 'oe',
+  Œ: 'oe',
+  ø: 'o',
+  Ø: 'o',
+  đ: 'd',
+  Đ: 'd',
+  ł: 'l',
+  Ł: 'l',
+  ð: 'd',
+  þ: 'th',
+}
+
 export function slugify(input: string): string {
   return input
+    .replace(/[ıİßæÆœŒøØđĐłŁðþ]/g, (char) => TRANSLITERATIONS[char] ?? char)
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
