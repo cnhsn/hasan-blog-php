@@ -1,0 +1,69 @@
+name: hasan-journal
+
+# Local development services: PostgreSQL, Garage (S3-compatible media
+# storage, see docs/DECISIONS.md), Mailpit (mail capture). All ports
+# bind to loopback only. `pnpm services:down` calls `docker compose stop`
+# — it never deletes these volumes.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required — run pnpm setup:local first}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — run pnpm setup:local first}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required — run pnpm setup:local first}
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  garage:
+    image: dxflrs/garage:v2.4.1
+    restart: unless-stopped
+    entrypoint: ['/garage']
+    command: ['server', '--single-node', '--default-access-key', '--default-bucket']
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?GARAGE_RPC_SECRET is required — run pnpm setup:local first}
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY_ID:?GARAGE_ACCESS_KEY_ID is required — run pnpm setup:local first}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_ACCESS_KEY:?GARAGE_SECRET_ACCESS_KEY is required — run pnpm setup:local first}
+      GARAGE_DEFAULT_BUCKET: ${GARAGE_BUCKET:?GARAGE_BUCKET is required — run pnpm setup:local first}
+    ports:
+      - '127.0.0.1:3900:3900' # S3 API
+      - '127.0.0.1:3903:3903' # admin/health API
+    volumes:
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    healthcheck:
+      test: ['CMD', '/garage', 'health']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.31.2
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:1025:1025' # SMTP
+      - '127.0.0.1:8025:8025' # Web UI
+    volumes:
+      - mailpit-data:/data
+    environment:
+      MP_DATA_FILE: /data/mailpit.db
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:8025/']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres-data:
+  garage-meta:
+  garage-data:
+  mailpit-data:
