@@ -1,0 +1,88 @@
+name: hasan-journal-prod
+
+# Production-style deployment for a single Docker host behind a TLS
+# reverse proxy. The proxy itself is intentionally not defined here —
+# the operator terminates TLS (Caddy/nginx/Traefik) and forwards to the
+# app's published loopback port. Postgres is never exposed publicly.
+#
+# Required environment (supplied by the operator, e.g. an .env.production
+# file passed with `--env-file`, or real secrets management):
+#   PUBLIC_SITE_URL, PAYLOAD_SECRET, POSTGRES_USER, POSTGRES_PASSWORD,
+#   POSTGRES_DB, S3_*, SMTP_*
+#
+# Release sequence (docs/OPERATIONS.md):
+#   1. docker compose -f compose.production.yaml build
+#   2. docker compose -f compose.production.yaml run --rm migrate
+#   3. docker compose -f compose.production.yaml up -d app
+#   4. docker compose -f compose.production.yaml exec app \
+#        node node_modules/tsx/dist/cli.mjs scripts/admin-bootstrap.ts   # first release only
+#
+# Step 2 runs as a one-off job so exactly one process applies migrations —
+# never let multiple app replicas race to migrate on boot.
+
+x-app-environment: &app-environment
+  NODE_ENV: production
+  PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:?PUBLIC_SITE_URL is required}
+  PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
+  DATABASE_URI: postgres://${POSTGRES_USER:?required}:${POSTGRES_PASSWORD:?required}@postgres:5432/${POSTGRES_DB:?required}
+  S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT is required}
+  S3_REGION: ${S3_REGION:?S3_REGION is required}
+  S3_BUCKET: ${S3_BUCKET:?S3_BUCKET is required}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID is required}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+  SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_SECURE: ${SMTP_SECURE:-true}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASS: ${SMTP_PASS:-}
+  SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS:?SMTP_FROM_ADDRESS is required}
+  SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Hasan Journal}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # Not published to the host at all: only reachable on the compose network.
+    expose:
+      - '5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # One-off controlled migration job. Run it before starting/upgrading `app`.
+  migrate:
+    build:
+      context: .
+    image: hasan-journal:latest
+    restart: 'no'
+    environment: *app-environment
+    command: ['node', 'node_modules/payload/bin.js', 'migrate']
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+    image: hasan-journal:latest
+    restart: unless-stopped
+    environment: *app-environment
+    # Loopback only: the TLS reverse proxy on the host forwards to this.
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 30s
+
+volumes:
+  postgres-data:

@@ -1,0 +1,27 @@
+# Never copy secrets or local state into an image layer.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+node_modules
+.next
+out
+dist
+build
+
+backups
+artifacts
+playwright-report
+test-results
+coverage
+*.log
+*.tsbuildinfo
+
+# Local-only reference material and docs (not needed at runtime).
+reference-site
+prompts
+docs
+README_TR.md
+PACKAGE_MANIFEST.json

@@ -5,9 +5,21 @@
  * contents.
  */
 
-function required(name: string): string {
+/**
+ * `next build` forces NODE_ENV=production and sets NEXT_PHASE, but the
+ * build must not require real production secrets or a reachable
+ * database (docs/OPERATIONS.md A23). During the build phase we fall
+ * back to obviously-fake placeholders and skip the production
+ * strictness checks; everything is enforced normally at runtime.
+ */
+function isBuildPhase(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build'
+}
+
+function required(name: string, buildPlaceholder = 'build-phase-placeholder'): string {
   const value = process.env[name]
   if (!value || value.trim() === '') {
+    if (isBuildPhase()) return buildPlaceholder
     throw new Error(`Missing required environment variable: ${name}`)
   }
   return value
@@ -28,11 +40,14 @@ function loadEnv() {
   const nodeEnv = optional('NODE_ENV', 'development') as 'development' | 'production' | 'test'
   const isProduction = nodeEnv === 'production'
 
-  const publicSiteUrl = required('PUBLIC_SITE_URL')
+  const publicSiteUrl = required('PUBLIC_SITE_URL', 'https://build-phase-placeholder.invalid')
   const payloadSecret = required('PAYLOAD_SECRET')
-  const databaseUri = required('DATABASE_URI')
+  const databaseUri = required(
+    'DATABASE_URI',
+    'postgres://build:build@build-phase-placeholder.invalid:5432/build',
+  )
 
-  if (isProduction) {
+  if (isProduction && !isBuildPhase()) {
     let parsed: URL
     try {
       parsed = new URL(publicSiteUrl)

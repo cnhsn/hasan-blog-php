@@ -3,6 +3,8 @@ import type { MetadataRoute } from 'next'
 import { getEnv } from '@/lib/env'
 import { getPayloadClient } from '@/lib/payload'
 
+export const dynamic = 'force-dynamic'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const env = getEnv()
   const payload = await getPayloadClient()

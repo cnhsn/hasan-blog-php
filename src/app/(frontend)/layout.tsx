@@ -7,6 +7,16 @@ import { getEnv } from '@/lib/env'
 import { getSiteSettings } from '@/lib/queries/siteSettings'
 import type { Metadata } from 'next'
 
+/**
+ * Everything under the public route group renders per request. Public
+ * pages read the CMS directly (docs/DECISIONS.md "start uncached"), so
+ * prerendering would both bake stale content into the build and make
+ * the build depend on a reachable database — which docs/OPERATIONS.md
+ * explicitly rules out. Applies to nested segments, including the
+ * not-found page.
+ */
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings()
   const env = getEnv()
