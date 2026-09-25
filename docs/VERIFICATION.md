@@ -35,7 +35,7 @@ from the application.
 | A05 | Draft isolation | **pass** | `access.test.ts`: drafts absent from anonymous list, slug lookup and relationship population. Browser test: a draft's URL returns **404** to an anonymous context while the owner previews it, and the draft is absent from `/blog`, `/rss.xml` and `/sitemap.xml`. |
 | A06 | Owner editing | **partial** | Create/edit/publish verified through the authenticated REST API and the Local API, and the admin panel loads and authenticates. Autosave (`versions.drafts.autosave`, 2s) and inline validation messages were **not** driven through the admin UI in a browser test. |
 | A07 | Published revision preserved | **pass** | `access.test.ts`: after editing a published post as a draft, anonymous reads still return the published title while the owner's draft read returns the new one. |
-| A08 | Preview isolation | **pass** | Two concurrent browser contexts: owner sees draft content + preview banner; visitor gets 404 for the same URL. "Exit preview" clears state — the same URL then 404s for the owner too. Preview without a session → 401; with a session but a tampered token → 401. |
+| A08 | Preview isolation | **pass** | Two concurrent browser contexts: owner sees draft content + preview banner; visitor gets 404 for the same URL. "Exit preview" clears state — the same URL then 404s for the owner too. Preview without a session → 401; with a session but a tampered token → 401. Measured against a real production server (`next start`), the draft response carries `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate`, so it cannot be held by a shared cache; the same URL returns 404 to an anonymous request. Preview entry refusals return `private, no-store`. |
 | A09 | Publish/unpublish speed | **pass** | Measured over HTTP: publish → visible in `/blog` in **200 ms**; present in RSS and sitemap. Unpublish → gone from listing in **96 ms**, detail page 404. Requirement was 5 s. |
 | A10 | Projects | **pass** | Project with gallery, technology labels, links and lifecycle status created and published (`seed-demo`), renders at `/projects/sample-project`. Lifecycle status is a separate field from `_status` and is shown independently. |
 | A11 | Media privacy | **pass** | Private asset: anonymous `GET /api/media/file/…` → **403**, owner → 200. After marking public: anonymous → 200. After reverting to private: anonymous → 403 again. |
@@ -77,6 +77,11 @@ Stated plainly rather than glossed over:
 - **Real SMTP delivery** was not tested; only local mail capture.
 - **`pnpm services:reset`** was not executed (it prompts for confirmation);
   the equivalent `docker compose down -v` was, during the A01 clean-slate run.
+- **Cookie authentication requires a trusted `Origin`.** Verified as a
+  positive security property: with `Origin: http://localhost:3000` the
+  session cookie authenticates, and with `Origin: https://evil.example.com`
+  the same cookie is ignored and the request stays anonymous. Cookie-based
+  mutations without an allowed Origin are rejected (403).
 
 ## Reproducing
 

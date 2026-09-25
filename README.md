@@ -168,7 +168,16 @@ Migration adımı ayrı bir tek seferlik iş olarak çalışır; birden fazla ko
 aynı anda migration uygulamaya çalışmaz.
 
 `PUBLIC_SITE_URL` üretimde `https://` olmak ve `localhost` olmamak
-zorundadır; aksi halde uygulama açılışta anlaşılır bir hata ile durur.
+zorundadır; aksi halde uygulama anlaşılır bir hata ile durur
+(`PUBLIC_SITE_URL must not be localhost in production`).
+
+Bu kural yerelde `pnpm start` denemesini de etkiler — `next build` NODE_ENV'i
+production yapar. Üretim derlemesini yerelde denemek için geçerli bir origin ver:
+
+```bash
+pnpm build
+PUBLIC_SITE_URL=https://ornek.invalid pnpm start
+```
 
 ### Yedekleme ve geri dönüş
 
