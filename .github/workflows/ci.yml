@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Disposable service instances only — CI never touches real data.
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create local environment
+        run: pnpm setup:local
+
+      - name: Start services (Postgres, Garage, Mailpit)
+        run: pnpm services:up
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      # Generated artifacts are committed; fail if they drift from the config.
+      - name: Check generated types and import map are up to date
+        run: |
+          pnpm generate:types
+          pnpm generate:importmap
+          if ! git diff --quiet -- src/payload-types.ts 'src/app/(payload)/admin/importMap.js'; then
+            echo "::error::Generated files are out of date. Run pnpm generate:types && pnpm generate:importmap and commit the result."
+            git diff -- src/payload-types.ts 'src/app/(payload)/admin/importMap.js'
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit and integration tests
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Seed content for browser tests
+        run: |
+          pnpm seed
+          printf 'ci-owner@example.invalid\nci-test-password\nci-test-password\nHasan\n' | pnpm admin:bootstrap
+          ALLOW_DEMO_SEED=true pnpm seed:demo
+
+      - name: Browser tests
+        run: pnpm test:e2e
+        env:
+          E2E_OWNER_EMAIL: ci-owner@example.invalid
+          E2E_OWNER_PASSWORD: ci-test-password
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image must build with no environment and no database
+      # available, so nothing here supplies either.
+      - name: Build production image
+        run: docker build -t hasan-journal:ci .

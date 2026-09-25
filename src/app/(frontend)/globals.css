@@ -1030,6 +1030,13 @@ a {
   }
 }
 
+/* Headings receive focus programmatically on route change (see
+   RouteFocusManager). That is a scroll/announce target, not an
+   interactive control, so it should not paint a focus ring. */
+main h1[tabindex='-1']:focus {
+  outline: none;
+}
+
 a:focus-visible,
 button:focus-visible {
   outline: 3px solid var(--color-cobalt);
