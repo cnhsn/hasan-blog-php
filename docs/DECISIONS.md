@@ -104,3 +104,17 @@ The size is acceptable for the documented target (a single Docker host); if it
 ever matters, the fix is a separate slim runtime image plus a dedicated
 migration image, not partial standalone output.
 
+### Kit integrity and two files missing from the checkout
+`PACKAGE_MANIFEST.json` lists `.env.example` and `.gitignore`, but neither
+file existed in the delivered checkout. Both were written from scratch:
+`.env.example` follows the variable contract the docs describe, and
+`.gitignore` excludes `.env`, backups, artifacts and build output. Their
+hashes therefore do not match the manifest.
+
+Every other manifest entry still hashes identically to the original —
+AGENTS.md, all of `reference-site/`, `prompts/`, `opencode.json`,
+`README_TR.md` and the specification documents are untouched. The only
+deliberately modified documents are `docs/PROGRESS.md`,
+`docs/DECISIONS.md` and `docs/VERIFICATION.md`, which the instructions
+require the implementing agent to maintain.
+
