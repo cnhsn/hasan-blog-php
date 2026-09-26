@@ -1,0 +1,10 @@
+# Defense in depth only: the real protection is that the hosting
+# document root points at public/, not here. This file guards against a
+# misconfigured document root exposing app/ directly.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>

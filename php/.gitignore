@@ -1,0 +1,5 @@
+app/config.php
+storage/logs/*.log
+storage/uploads/*
+!storage/uploads/.gitkeep
+.env

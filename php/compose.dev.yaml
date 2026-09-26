@@ -1,0 +1,28 @@
+name: hasan-journal-php-dev
+
+# Local MySQL for developing/testing the PHP port. Not part of the
+# shared-hosting deployment itself — that target has no Docker at all;
+# this is purely a local dev convenience, mirroring how the Next.js
+# build used Postgres/Garage/Mailpit in Docker for local development.
+
+services:
+  mysql:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: hasan_journal_php
+      MARIADB_USER: hasan
+      MARIADB_PASSWORD: devpass
+    ports:
+      - '127.0.0.1:3307:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mysql-data:
