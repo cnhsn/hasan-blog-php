@@ -410,13 +410,23 @@ a {
 }
 
 /* Collection pages (blog/projects list) ------------------------------------ */
+/* flex, not grid: the number of children varies (heading, an optional
+   category filter row, then either the empty state or the card grid).
+   A fixed `grid-template-rows: auto 1fr` assumes exactly two children,
+   so a 1fr row meant for the main content would land on the filter row
+   instead whenever it's present, stretching it to fill the page. */
 .collection-main {
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   background: var(--color-offwhite);
   padding: clamp(24px, 4vw, 64px);
   gap: 28px;
   border: 1px solid var(--color-border);
+}
+
+.collection-main > .empty-state,
+.collection-main > .card-grid {
+  flex: 1;
 }
 
 .collection-heading {
