@@ -7,11 +7,11 @@
  * Production collections stay empty: this is never part of the normal
  * setup sequence.
  */
+import type { SanitizedConfig } from 'payload'
 import { getPayload, type Payload } from 'payload'
 import sharp from 'sharp'
 
 import { getEnv } from '../src/lib/env.ts'
-import config from '../src/payload.config.ts'
 
 const SAMPLE_PREFIX = 'sample-'
 
@@ -65,7 +65,7 @@ async function clearExistingSamples(payload: Payload) {
   })
 }
 
-async function main() {
+async function main(config: SanitizedConfig) {
   const env = getEnv()
 
   if (env.isProduction) {
@@ -195,9 +195,12 @@ async function main() {
   console.log('All sample slugs start with "sample-". Re-running replaces only those documents.')
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
+export async function script(config: SanitizedConfig): Promise<void> {
+  try {
+    await main(config)
+    process.exit(0)
+  } catch (error) {
     console.error('Demo seed failed:', error instanceof Error ? error.message : error)
     process.exit(1)
-  })
+  }
+}

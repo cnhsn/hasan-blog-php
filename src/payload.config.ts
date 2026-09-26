@@ -25,6 +25,17 @@ export default buildConfig({
   admin: {
     user: Users.slug,
   },
+  /**
+   * Operational scripts run through Payload's own CLI and TypeScript
+   * loader, so the identical command works in development and inside
+   * the production image — which installs production dependencies only
+   * and therefore has no top-level `tsx` to invoke directly.
+   */
+  bin: [
+    { key: 'admin:bootstrap', scriptPath: path.resolve(dirname, '../scripts/admin-bootstrap.ts') },
+    { key: 'seed', scriptPath: path.resolve(dirname, '../scripts/seed.ts') },
+    { key: 'seed:demo', scriptPath: path.resolve(dirname, '../scripts/seed-demo.ts') },
+  ],
   editor: createRichTextEditor(),
   collections: [Users, Media, Categories, Tags, Posts, Projects, Redirects],
   globals: [SiteSettings],

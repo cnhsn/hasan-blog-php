@@ -47,6 +47,18 @@ function loadEnv() {
     'postgres://build:build@build-phase-placeholder.invalid:5432/build',
   )
 
+  /**
+   * Self-hosting the production stack on a single machine, reachable
+   * only over loopback, is a legitimate deployment — but it cannot use
+   * https and its canonical origin genuinely is localhost.
+   *
+   * This opt-in is deliberately narrow: it only ever permits loopback
+   * hosts. A public hostname served over plain http is still rejected
+   * with the flag set, so it cannot be used to wave through a
+   * misconfigured internet-facing deployment.
+   */
+  const allowLocalProduction = optionalBool('ALLOW_LOCAL_PRODUCTION', false)
+
   if (isProduction && !isBuildPhase()) {
     let parsed: URL
     try {
@@ -54,10 +66,18 @@ function loadEnv() {
     } catch {
       throw new Error('PUBLIC_SITE_URL must be a valid absolute URL in production')
     }
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
-      throw new Error('PUBLIC_SITE_URL must not be localhost in production')
+    const isLoopback =
+      parsed.hostname === 'localhost' ||
+      parsed.hostname === '127.0.0.1' ||
+      parsed.hostname === '[::1]'
+
+    if (isLoopback && !allowLocalProduction) {
+      throw new Error(
+        'PUBLIC_SITE_URL must not be localhost in production. ' +
+          'Set ALLOW_LOCAL_PRODUCTION=true only for a loopback-only self-hosted deployment.',
+      )
     }
-    if (parsed.protocol !== 'https:') {
+    if (!isLoopback && parsed.protocol !== 'https:') {
       throw new Error('PUBLIC_SITE_URL must use https in production')
     }
     if (payloadSecret.length < 32) {

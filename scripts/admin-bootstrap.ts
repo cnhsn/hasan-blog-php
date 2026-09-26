@@ -4,13 +4,19 @@
  * secret input; fail if an owner already exists."). Uses the Local API
  * with `overrideAccess: true` and `context: { isBootstrapCli: true }` —
  * the only caller allowed past src/hooks/restrictUserCreation.ts.
+ *
+ * Registered as a Payload bin script (see `bin` in src/payload.config.ts),
+ * so the identical command works in development and inside the
+ * production container, which ships no devDependencies:
+ *
+ *   node node_modules/payload/bin.js admin:bootstrap
  */
+import type { SanitizedConfig } from 'payload'
 import { getPayload } from 'payload'
 
-import config from '../src/payload.config.ts'
 import { closePrompts, promptHidden, promptText } from './lib/prompt.mjs'
 
-async function main() {
+async function main(config: SanitizedConfig) {
   const payload = await getPayload({ config })
 
   const existing = await payload.count({ collection: 'users', overrideAccess: true })
@@ -59,13 +65,14 @@ async function main() {
   console.log(`Owner account created for ${email}. You can now log in at /admin.`)
 }
 
-main()
-  .then(() => {
+export async function script(config: SanitizedConfig): Promise<void> {
+  try {
+    await main(config)
     closePrompts()
     process.exit(process.exitCode ?? 0)
-  })
-  .catch((error) => {
+  } catch (error) {
     closePrompts()
     console.error('Bootstrap failed:', error instanceof Error ? error.message : error)
     process.exit(1)
-  })
+  }
+}

@@ -45,6 +45,9 @@ COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/.next ./.next
 COPY --chown=node:node package.json tsconfig.json next.config.ts ./
 COPY --chown=node:node src ./src
+# Operational bin scripts (owner bootstrap, seed) run inside the
+# container through the Payload CLI — see `bin` in src/payload.config.ts.
+COPY --chown=node:node scripts ./scripts
 
 USER node
 EXPOSE 3000

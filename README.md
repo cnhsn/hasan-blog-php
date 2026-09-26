@@ -134,7 +134,53 @@ docker build -t hasan-journal:latest .
 İmaj **hiçbir ortam değişkeni veya veritabanı olmadan** derlenir; gerçek
 secret'lar yalnızca çalışma anında dışarıdan verilir.
 
-### Dağıtım (tek Docker sunucusu + TLS reverse proxy)
+### Seçenek A — Her şey Docker'da, tek makinede (dış servis gerekmez)
+
+Alan adı, sunucu, harici S3 veya SMTP olmadan siteyi gerçek üretim modunda
+çalıştırır. Uygulama + PostgreSQL + Garage (S3) + Mailpit tek bir Compose
+projesinde, kendi volume'leriyle; **yalnızca loopback**'e bağlanır, ağdan
+erişilemez. Geliştirme yığınından (`compose.yaml`) tamamen ayrıdır.
+
+```bash
+pnpm setup:selfhost      # .env.selfhost üretir (kendi secret'ları, mode 600)
+pnpm selfhost:migrate    # şemayı kurar (tek seferlik kontrollü iş)
+pnpm selfhost:up         # imajı derler ve yığını başlatır
+```
+
+Sonra **ilk yöneticiyi kendin oluştur** (parolayı ben belirlemem):
+
+```bash
+docker compose -f compose.selfhost.yaml --env-file .env.selfhost \
+  exec app node node_modules/payload/bin.js admin:bootstrap
+```
+
+| Adres | Ne |
+|---|---|
+| http://localhost:8080 | Site |
+| http://localhost:8080/admin | Yönetim paneli |
+| http://localhost:8026 | Mailpit — parola sıfırlama e-postaları buraya düşer |
+
+Varsayılan site ayarlarını yazmak için (isteğe bağlı):
+
+```bash
+docker compose -f compose.selfhost.yaml --env-file .env.selfhost \
+  exec app node node_modules/payload/bin.js seed
+```
+
+Diğer komutlar: `pnpm selfhost:logs`, `pnpm selfhost:down` (veri silmez).
+Portu değiştirmek için `.env.selfhost` içindeki `APP_PORT` ve
+`PUBLIC_SITE_URL` değerlerini birlikte güncelle.
+
+Bu kurulum `ALLOW_LOCAL_PRODUCTION=true` kullanır. Bu bayrak **sadece**
+loopback adreslerine izin verir; gerçek bir alan adını http üzerinden
+yayınlamaya çalışırsan uygulama yine reddeder.
+
+> Loopback'e bağlı olduğu için bu kurulum internete açık değildir. Dışarı
+> açmak istersen önüne TLS sonlandıran bir reverse proxy koy ve
+> `PUBLIC_SITE_URL`'i gerçek `https://` adresinle değiştir (o zaman
+> `ALLOW_LOCAL_PRODUCTION`'a da gerek kalmaz).
+
+### Seçenek B — Sunucu + harici servisler (TLS reverse proxy arkasında)
 
 `compose.production.yaml` uygulamayı ve PostgreSQL'i tanımlar. Postgres
 dışarıya **hiç** açılmaz; uygulama yalnızca `127.0.0.1:3000` üzerinde dinler,
