@@ -1,0 +1,17 @@
+# Not part of the deployed application. Used only to verify the real
+# .htaccess/mod_rewrite behaviour that shared hosting (Apache) provides —
+# local testing otherwise uses `php -S` with a router script that does
+# not exercise .htaccess at all.
+FROM php:8.3-apache
+RUN apt-get update && apt-get install -y --no-install-recommends libpng-dev libwebp-dev libjpeg62-turbo-dev zlib1g-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && a2enmod rewrite \
+    && docker-php-ext-install pdo_mysql gd \
+    && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
+    && rm -rf /var/lib/apt/lists/*
+COPY . /var/www/html-src
+RUN cp -r /var/www/html-src/* /var/www/html/ \
+    && rm -rf /var/www/html-src \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/app
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf

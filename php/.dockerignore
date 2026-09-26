@@ -1,0 +1,5 @@
+app/config.php
+storage/uploads/*
+!storage/uploads/.gitkeep
+compose.dev.yaml
+Dockerfile.apache-test

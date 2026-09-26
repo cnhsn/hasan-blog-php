@@ -108,5 +108,37 @@
         });
       });
     });
+
+    initGalleryEditor();
   });
+
+  function galleryItemHtml(media, caption) {
+    return `
+      <img src="${media.thumbUrl}" alt="">
+      <input type="hidden" name="gallery_media_ids[]" value="${media.id}">
+      <input type="text" name="gallery_captions[${media.id}]" value="${caption ? escapeHtml(caption) : ''}" placeholder="Caption (optional)" style="flex:1">
+      <button type="button" class="button small danger gallery-remove">Remove</button>
+    `;
+  }
+
+  function initGalleryEditor() {
+    const list = document.getElementById('gallery-list');
+    const addButton = document.getElementById('gallery-add-button');
+    if (!list || !addButton) return;
+
+    list.addEventListener('click', (event) => {
+      if (event.target.classList.contains('gallery-remove')) {
+        event.target.closest('.gallery-editor-item')?.remove();
+      }
+    });
+
+    addButton.addEventListener('click', () => {
+      openMediaPicker((media) => {
+        const item = document.createElement('div');
+        item.className = 'gallery-editor-item';
+        item.innerHTML = galleryItemHtml(media, '');
+        list.appendChild(item);
+      });
+    });
+  }
 })();

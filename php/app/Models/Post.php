@@ -343,10 +343,13 @@ final class Post
 
     public function isMediaReferenced(int $mediaId): array
     {
+        // Real (non-emulated) prepared statements do not allow reusing
+        // the same named placeholder twice in one query — each
+        // occurrence needs its own bound parameter.
         $stmt = $this->pdo()->prepare(
-            'SELECT title FROM posts WHERE cover_media_id = :id OR seo_share_media_id = :id',
+            'SELECT title FROM posts WHERE cover_media_id = :id1 OR seo_share_media_id = :id2',
         );
-        $stmt->execute(['id' => $mediaId]);
+        $stmt->execute(['id1' => $mediaId, 'id2' => $mediaId]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 }

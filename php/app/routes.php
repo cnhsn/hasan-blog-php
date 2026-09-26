@@ -60,6 +60,7 @@ $router->post('/admin/projects/new', fn (Request $r, array $p) => (new Admin\Pro
 $router->get('/admin/projects/{id}/edit', fn (Request $r, array $p) => (new Admin\ProjectController())->edit($r, $p));
 $router->post('/admin/projects/{id}/edit', fn (Request $r, array $p) => (new Admin\ProjectController())->update($r, $p));
 $router->post('/admin/projects/{id}/delete', fn (Request $r, array $p) => (new Admin\ProjectController())->destroy($r, $p));
+$router->post('/admin/projects/{id}/unpublish', fn (Request $r, array $p) => (new Admin\ProjectController())->unpublish($r, $p));
 $router->get('/admin/projects/{id}/versions', fn (Request $r, array $p) => (new Admin\ProjectController())->versions($r, $p));
 $router->post('/admin/projects/{id}/versions/{versionId}/restore', fn (Request $r, array $p) => (new Admin\ProjectController())->restoreVersion($r, $p));
 $router->get('/admin/projects/{id}/preview-link', fn (Request $r, array $p) => (new Admin\ProjectController())->previewLink($r, $p));
